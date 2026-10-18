@@ -15,12 +15,6 @@ const CONFIDENCE: Record<string, string> = {
   h: "High",
 };
 
-// acq_time arrives as "521" for 05:21, so pad to 4 digits first
-function parseAcquired(date: string, time: string): Date {
-  const t = time.padStart(4, "0");
-  return new Date(`${date}T${t.slice(0, 2)}:${t.slice(2)}:00Z`);
-}
-
 function fmt(d: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone,
