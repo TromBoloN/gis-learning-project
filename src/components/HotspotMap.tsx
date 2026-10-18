@@ -136,6 +136,7 @@ export default function HotspotMap() {
         const html = `
             <div style="font: 13px/1.5 system-ui, sans-serif; color: #0f172a;">
             <strong>Thermal detection</strong><br/>
+            ${p.kabupaten}, ${p.province}<br/>
             ${fmt(when, "UTC")} UTC<br/>
             ${fmt(when, "Asia/Makassar")} WITA · ${fmt(when, "Asia/Jakarta")} WIB<br/>
             <em>${hoursAgo(when)}</em>
