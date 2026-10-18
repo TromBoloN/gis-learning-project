@@ -25,18 +25,43 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.maplibregl-popup-content {
-  background: rgba(15, 23, 42, 0.92);
+/* Firefox + modern Chromium */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+/* Safari and older Chromium */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.55); background-clip: padding-box; }
+
+.maplibregl-map .maplibregl-popup .maplibregl-popup-content {
+  background: rgba(15, 23, 42, 0.88);
   color: #e2e8f0;
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 14px;
   padding: 14px 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
 }
-.maplibregl-popup-close-button { color: #94a3b8; font-size: 18px; padding: 4px 8px; }
-.maplibregl-popup-close-button:hover { background: transparent; color: #fff; }
-.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: rgba(15, 23, 42, 0.92); }
-.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: rgba(15, 23, 42, 0.92); }
-.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: rgba(15, 23, 42, 0.92); }
-.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: rgba(15, 23, 42, 0.92); }
+.maplibregl-map .maplibregl-popup-close-button {
+  color: #94a3b8;
+  font-size: 18px;
+  padding: 2px 8px;
+  border-radius: 0 14px 0 8px;
+}
+.maplibregl-map .maplibregl-popup-close-button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.maplibregl-map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: rgba(15, 23, 42, 0.88); }
+.maplibregl-map .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: rgba(15, 23, 42, 0.88); }
+.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: rgba(15, 23, 42, 0.88); }
+.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: rgba(15, 23, 42, 0.88); }
+
+button:focus-visible { outline: 2px solid rgba(251, 146, 60, 0.7); outline-offset: 2px; }
+button:focus:not(:focus-visible) { outline: none; }

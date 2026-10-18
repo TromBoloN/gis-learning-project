@@ -52,6 +52,7 @@ export default function HotspotMap() {
   const [items, setItems] = useState<Item[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("hotspots");
   const [latest, setLatest] = useState<Date | null>(null);
+  const [satellite, setSatellite] = useState(false);
 
   useEffect(() => {
     fetch("/api/ranking")
@@ -94,11 +95,45 @@ export default function HotspotMap() {
         source: "borders",
         paint: { "fill-color": "#0f1a2e" },
       });
+
+      const day = new Date(Date.now() - 24 * 36e5).toISOString().slice(0, 10);
+      map.setPaintProperty("borders-fill", "fill-opacity", satellite ? 0 : 1); // yesterday UTC, today's mosaic may be incomplete
+      map.addSource("gibs", {
+        type: "raster",
+        tileSize: 256,
+        maxzoom: 9,
+        tiles: [
+          `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/${day}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
+        ],
+        attribution: "Imagery: NASA GIBS",
+      });
+      map.addLayer({
+        id: "borders-glow",
+        type: "line",
+        source: "borders",
+        paint: {
+          "line-color": "#22d3ee",
+          "line-opacity": 0.12,
+          "line-width": 4,
+          "line-blur": 3,
+        },
+      });
       map.addLayer({
         id: "borders-line",
         type: "line",
         source: "borders",
-        paint: { "line-color": "#2b3b55", "line-width": 0.6 },
+        paint: {
+          "line-color": "#22d3ee",
+          "line-opacity": 0.45,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 8, 1.2],
+        },
+      });
+      map.addLayer({
+        id: "gibs",
+        type: "raster",
+        source: "gibs",
+        layout: { visibility: "none" },
+        paint: { "raster-brightness-max": 0.8, "raster-saturation": -0.2 },
       });
 
       const res = await fetch("/api/hotspots");
@@ -211,7 +246,7 @@ export default function HotspotMap() {
     <div class="mt-1 font-mono text-[11px] text-slate-500">${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}</div>
   </div>`;
 
-        new maplibregl.Popup({ maxWidth: "260px" })
+        new maplibregl.Popup({ maxWidth: "260px", focusAfterOpen: false })
           .setLngLat(coords)
           .setHTML(html)
           .addTo(map);
@@ -236,6 +271,12 @@ export default function HotspotMap() {
   const totalDetections = items.reduce((s, i) => s + i.hotspots, 0);
   const totalFrp = items.reduce((s, i) => s + i.totalFrp, 0);
   const max = Math.max(1, ...top.map((i) => i[sortKey]));
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("gibs")) return;
+    map.setLayoutProperty("gibs", "visibility", satellite ? "visible" : "none");
+  }, [satellite]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-slate-950">
@@ -310,6 +351,22 @@ export default function HotspotMap() {
                 </button>
               ))}
             </div>
+
+            {/* satellite toggle */}
+            <button
+              onClick={() => setSatellite(!satellite)}
+              className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs transition hover:bg-white/10"
+            >
+              <span className="font-medium">Satellite imagery</span>
+              <span
+                className="flex h-4 w-7 shrink-0 items-center rounded-full bg-slate-600 p-0.5 transition data-[on=true]:bg-orange-500"
+                data-on={satellite}
+              >
+                <span
+                  className={`block h-3 w-3 rounded-full bg-white shadow transition-transform ${satellite ? "translate-x-3" : "translate-x-0"}`}
+                />
+              </span>
+            </button>
 
             {/* ranking with bars */}
             <ol className="space-y-1">
