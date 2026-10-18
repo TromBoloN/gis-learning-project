@@ -4,8 +4,6 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl/dist/maplibre-gl-csp";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import Papa from "papaparse";
-
 const SATELLITES: Record<string, string> = {
   N: "Suomi NPP",
   N20: "NOAA-20",
@@ -38,17 +36,6 @@ function hoursAgo(d: Date): string {
   const h = Math.round((Date.now() - d.getTime()) / 36e5);
   return h < 1 ? "less than 1 h ago" : `${h} h ago`;
 }
-
-type Row = {
-  latitude: string;
-  longitude: string;
-  confidence: string;
-  acq_date: string;
-  acq_time: string;
-  satellite: string;
-  frp: string;
-  bright_ti4: string;
-};
 
 maplibregl.setWorkerUrl("/maplibre-gl-csp-worker.js");
 export default function HotspotMap() {
@@ -92,39 +79,14 @@ export default function HotspotMap() {
         paint: { "line-color": "#475569", "line-width": 0.5 },
       });
 
-      const res = await fetch("/data/hotspots.csv");
+      const res = await fetch("/api/hotspots");
       if (!res.ok) {
-        console.warn("hotspots.csv not found");
+        console.warn("hotspots API failed", res.status);
         return;
       }
-      const text = await res.text();
-      const { data } = Papa.parse<Row>(text, {
-        header: true,
-        skipEmptyLines: true,
-      });
+      const geojson = await res.json();
 
-      map.addSource("hotspots", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: data.map((r) => ({
-            type: "Feature",
-            properties: {
-              confidence: r.confidence,
-              acq_date: r.acq_date,
-              acq_time: r.acq_time,
-              satellite: r.satellite,
-              frp: Number(r.frp),
-              bright_ti4: Number(r.bright_ti4),
-            },
-            geometry: {
-              type: "Point",
-              coordinates: [Number(r.longitude), Number(r.latitude)],
-            },
-          })),
-        },
-      });
-
+      map.addSource("hotspots", { type: "geojson", data: geojson });
       map.addLayer({
         id: "hotspots-circles",
         type: "circle",
@@ -158,17 +120,18 @@ export default function HotspotMap() {
         if (!f) return;
 
         const p = f.properties as {
-          confidence: string;
-          acq_date: string;
-          acq_time: string;
+          acquired_at: string;
           satellite: string;
+          confidence: string;
           frp: number;
           bright_ti4: number;
+          kabupaten: string;
+          province: string;
         };
+        const when = new Date(p.acquired_at);
         const coords = (
           f.geometry as unknown as { coordinates: [number, number] }
         ).coordinates;
-        const when = parseAcquired(p.acq_date, p.acq_time);
 
         const html = `
             <div style="font: 13px/1.5 system-ui, sans-serif; color: #0f172a;">
