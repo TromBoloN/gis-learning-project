@@ -77,6 +77,25 @@ async function main() {
     inserted += rows.length;
   }
 
+         // pass 1: exact containment (uses the GiST index)
+  const inside = await client`
+    UPDATE hotspots h
+    SET kabupaten_code = k.kode_kab, province_code = k.kode_prov
+    FROM kabupaten k
+    WHERE h.kabupaten_code IS NULL AND ST_Contains(k.geom, h.geom)
+    RETURNING h.id`;
+
+  // pass 2: coastal leftovers within 1 km (pixel centers vs. simplified coastline)
+  const coastal = await client`
+    UPDATE hotspots h
+    SET kabupaten_code = k.kode_kab, province_code = k.kode_prov
+    FROM kabupaten k
+    WHERE h.kabupaten_code IS NULL
+      AND ST_DWithin(k.geom::geography, h.geom::geography, 1000)
+    RETURNING h.id`;
+
+  console.log(`Tagged ${inside.length} inside + ${coastal.length} coastal`);
+
   console.log(`Inserted ${inserted} new rows (${values.length - inserted} duplicates skipped)`);
   await client.end();
 }
