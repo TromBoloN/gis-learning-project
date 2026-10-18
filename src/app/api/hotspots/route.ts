@@ -9,10 +9,12 @@ const client = globalForDb.pg ?? postgres(process.env.DATABASE_URL!, { max: 5 })
 if (process.env.NODE_ENV !== "production") globalForDb.pg = client;
 const db = drizzle(client);
 
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const to = sp.get("to") ? new Date(sp.get("to")!) : new Date();
   const from = sp.get("from") ? new Date(sp.get("from")!) : new Date(to.getTime() - 48 * 36e5);
+  
 
   if (isNaN(from.getTime()) || isNaN(to.getTime())) {
     return NextResponse.json({ error: "invalid from/to" }, { status: 400 });
@@ -25,11 +27,12 @@ export async function GET(req: NextRequest) {
     JOIN kabupaten k ON k.kode_kab = h.kabupaten_code
     WHERE h.acquired_at >= ${from.toISOString()} AND h.acquired_at <= ${to.toISOString()}
     ORDER BY h.acquired_at DESC
-    LIMIT 20000`);
+        LIMIT 100000`);
 
   const features = (rows as unknown as Record<string, any>[]).map((r) => ({
     type: "Feature" as const,
     properties: {
+            t: new Date(r.acquired_at).getTime(),
       acquired_at: new Date(r.acquired_at).toISOString(),
       satellite: r.satellite,
       confidence: r.confidence,
@@ -38,7 +41,10 @@ export async function GET(req: NextRequest) {
       kabupaten: r.nama_kab,
       province: r.nama_prov,
     },
-    geometry: { type: "Point" as const, coordinates: [r.longitude, r.latitude] },
+     geometry: {
+      type: "Point" as const,
+      coordinates: [Math.round(r.longitude * 1e4) / 1e4, Math.round(r.latitude * 1e4) / 1e4],
+    },
   }));
 
   return NextResponse.json(

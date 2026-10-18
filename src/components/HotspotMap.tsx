@@ -53,14 +53,20 @@ export default function HotspotMap() {
   const [sortKey, setSortKey] = useState<SortKey>("hotspots");
   const [latest, setLatest] = useState<Date | null>(null);
   const [satellite, setSatellite] = useState(false);
+  const [hours, setHours] = useState(48);
+  const [ready, setReady] = useState(false);
+  const [span, setSpan] = useState<{ min: number; max: number } | null>(null);
+  const [cursor, setCursor] = useState<number | null>(null); // null = show all
+  const [playing, setPlaying] = useState(false);
+  const rangeLabel = hours === 168 ? "7 d" : `${hours} h`;
 
   useEffect(() => {
-    fetch("/api/ranking")
+    const from = new Date(Date.now() - hours * 36e5).toISOString();
+    fetch(`/api/ranking?from=${from}`)
       .then((r) => r.json())
       .then((d) => setItems(d.items))
       .catch((e) => console.warn("ranking failed", e));
-  }, []);
-
+  }, [hours]);
   const top = [...items].sort((a, b) => b[sortKey] - a[sortKey]).slice(0, 10);
 
   useEffect(() => {
@@ -97,7 +103,6 @@ export default function HotspotMap() {
       });
 
       const day = new Date(Date.now() - 24 * 36e5).toISOString().slice(0, 10);
-      map.setPaintProperty("borders-fill", "fill-opacity", satellite ? 0 : 1); // yesterday UTC, today's mosaic may be incomplete
       map.addSource("gibs", {
         type: "raster",
         tileSize: 256,
@@ -136,18 +141,10 @@ export default function HotspotMap() {
         paint: { "raster-brightness-max": 0.8, "raster-saturation": -0.2 },
       });
 
-      const res = await fetch("/api/hotspots");
-      if (!res.ok) {
-        console.warn("hotspots API failed", res.status);
-        return;
-      }
-      const geojson = await res.json();
-      const times = geojson.features.map((f: any) =>
-        new Date(f.properties.acquired_at).getTime(),
-      );
-      if (times.length) setLatest(new Date(Math.max(...times)));
-
-      map.addSource("hotspots", { type: "geojson", data: geojson });
+      map.addSource("hotspots", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
 
       // radius grows with zoom AND with FRP (zoom must be the outermost expression)
       const byFrp = (lo: number, hi: number) => [
@@ -210,6 +207,7 @@ export default function HotspotMap() {
           "circle-stroke-color": "rgba(255,255,255,0.35)",
         },
       });
+
       map.on("click", "hotspots-circles", (e) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -262,9 +260,14 @@ export default function HotspotMap() {
         "hotspots-circles",
         () => (map.getCanvas().style.cursor = ""),
       );
+
+      setReady(true);
     });
 
-    return () => map.remove();
+    return () => {
+      setReady(false);
+      map.remove();
+    };
   }, []);
 
   const [open, setOpen] = useState(true);
@@ -272,11 +275,70 @@ export default function HotspotMap() {
   const totalFrp = items.reduce((s, i) => s + i.totalFrp, 0);
   const max = Math.max(1, ...top.map((i) => i[sortKey]));
 
+  // load data for the selected range
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getLayer("gibs")) return;
+    if (!map || !ready) return;
+    const ctrl = new AbortController();
+    const from = new Date(Date.now() - hours * 36e5).toISOString();
+    fetch(`/api/hotspots?from=${from}`, { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((g) => {
+        const src = map.getSource("hotspots") as any;
+        if (!src) return;
+        src.setData(g);
+        let min = Infinity,
+          max = -Infinity;
+        for (const f of g.features) {
+          const t = f.properties.t;
+          if (t < min) min = t;
+          if (t > max) max = t;
+        }
+        if (g.features.length) {
+          setSpan({ min, max });
+          setLatest(new Date(max));
+        } else setSpan(null);
+        setCursor(null);
+      })
+      .catch(
+        (e) => e.name !== "AbortError" && console.warn("hotspots failed", e),
+      );
+    return () => ctrl.abort();
+  }, [hours, ready]);
+
+  // scrubber: show only detections up to the cursor (no refetch)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const filter = cursor == null ? null : ["<=", ["get", "t"], cursor];
+    for (const id of ["hotspots-glow", "hotspots-circles"]) {
+      if (map.getLayer(id)) map.setFilter(id, filter as any);
+    }
+  }, [cursor, ready]);
+
+  // playback: ~12 s from start to end
+  useEffect(() => {
+    if (!playing || !span) return;
+    const step = (span.max - span.min) / 200;
+    const id = setInterval(
+      () => setCursor((c) => Math.min(span.max, (c ?? span.min) + step)),
+      60,
+    );
+    return () => clearInterval(id);
+  }, [playing, span]);
+
+  useEffect(() => {
+    if (playing && span && cursor !== null && cursor >= span.max) {
+      setPlaying(false);
+      setCursor(null);
+    }
+  }, [cursor, playing, span]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !map.getLayer("gibs")) return;
     map.setLayoutProperty("gibs", "visibility", satellite ? "visible" : "none");
-  }, [satellite]);
+    map.setPaintProperty("borders-fill", "fill-opacity", satellite ? 0 : 1);
+  }, [satellite, ready]);
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-slate-950">
@@ -313,7 +375,7 @@ export default function HotspotMap() {
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-white/5 bg-white/5 p-3">
                 <div className="text-[10px] uppercase tracking-wider text-slate-400">
-                  Detections · 48 h
+                  {`Detections · ${rangeLabel}`}
                 </div>
                 <div className="mt-1 text-2xl font-semibold tabular-nums">
                   {totalDetections.toLocaleString()}
@@ -422,6 +484,64 @@ export default function HotspotMap() {
         <div className="mt-1 flex justify-between">
           <span>low</span>
           <span>high</span>
+        </div>
+      </div>
+
+      <div className="absolute bottom-4 left-1/2 w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-slate-100 shadow-2xl shadow-black/50 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setPlaying((p) => !p)}
+            disabled={!span}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-500 text-xs text-slate-950 disabled:opacity-40"
+          >
+            {playing ? "❚❚" : "▶"}
+          </button>
+          <input
+            type="range"
+            disabled={!span}
+            min={span?.min ?? 0}
+            max={span?.max ?? 1}
+            step={600000}
+            value={cursor ?? span?.max ?? 0}
+            onChange={(e) => {
+              setPlaying(false);
+              setCursor(Number(e.target.value));
+            }}
+            className="h-1 flex-1 cursor-pointer accent-orange-500"
+          />
+          <div className="flex rounded-lg bg-black/30 p-0.5 text-xs">
+            {(
+              [
+                [24, "24 h"],
+                [48, "48 h"],
+                [168, "7 d"],
+              ] as [number, string][]
+            ).map(([h, label]) => (
+              <button
+                key={h}
+                onClick={() => {
+                  setPlaying(false);
+                  setHours(h);
+                }}
+                className={`rounded-md px-2.5 py-1 font-medium transition ${
+                  hours === h
+                    ? "bg-orange-500 text-slate-950"
+                    : "text-slate-400 hover:text-slate-100"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-2 flex justify-between text-[10px] text-slate-400">
+          <span>{span ? fmt(new Date(span.min), "Asia/Jakarta") : ""}</span>
+          <span className="text-slate-200">
+            {cursor
+              ? `Up to ${fmt(new Date(cursor), "Asia/Jakarta")} WIB`
+              : "Showing all"}
+          </span>
+          <span>{span ? fmt(new Date(span.max), "Asia/Jakarta") : ""}</span>
         </div>
       </div>
 
