@@ -41,5 +41,5 @@ for await (let line of rl) {
   if (kept % 500 === 0) console.log(`kept ${kept} of ${seen} read`);
 }
 
-console.log(`Done: read ${seen} features, loaded ${kept} Kalimantan villages`);
+console.log(`Done: read ${seen} features, loaded ${kept} Kalimantan Kabupaten`);
 await sql.end();
