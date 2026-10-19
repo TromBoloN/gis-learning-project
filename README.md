@@ -23,16 +23,16 @@ Rather than just displaying pins on a map, this platform is an end-to-end system
   - [Roadmap Status (Phases 0–6)](#roadmap-status-phases-06)
   - [Minimum Viable Product (MVP) Checklist](#minimum-viable-product-mvp-checklist)
 - [Future Plans & Next Steps](#future-plans--next-steps)
-- [Study Club Learning Objectives](#study-club-learning-objectives)
 - [Data Sources & Attributions](#data-sources--attributions)
 
 ---
 
 ## Project Overview
 
-Kalimantan faces recurrent peatland and forest fires (*kebakaran hutan dan lahan* / karhutla), particularly during dry seasons and El Niño phases. Understanding these dynamics requires spatial and temporal depth:
+Kalimantan faces recurrent peatland and forest fires (_kebakaran hutan dan lahan_ / karhutla), particularly during dry seasons and El Niño phases. Understanding these dynamics requires spatial and temporal depth:
+
 - **Where are hotspots occurring?** Correlating satellite thermal anomalies with specific kabupaten administrative boundaries.
-- **Are they occurring on peatlands?** Crossing thermal detections with mapped peatland polygons (*kesatuan hidrologis gambut*).
+- **Are they occurring on peatlands?** Crossing thermal detections with mapped peatland polygons (_kesatuan hidrologis gambut_).
 - **How intense and confident are the detections?** Sizing and coloring based on Fire Radiative Power (FRP in MW) and brightness temperature.
 - **How do fire patterns evolve?** Interactive timeline scrubbing and multi-year comparative analytics.
 
@@ -62,14 +62,14 @@ Kalimantan faces recurrent peatland and forest fires (*kebakaran hutan dan lahan
    - NASA GIBS True-Color daily satellite imagery
 ```
 
-| Layer | Technologies |
-|---|---|
-| **Frontend UI** | [Next.js](https://nextjs.org) 16 (App Router), [React](https://react.dev) 19, [Tailwind CSS](https://tailwindcss.com) v4, TypeScript |
-| **Mapping Engine** | [MapLibre GL](https://maplibre.org) v5 (WebGL vector rendering) |
-| **Spatial Database** | [PostgreSQL](https://www.postgresql.org) 17 + [PostGIS](https://postgis.net) 3.5 via Docker |
-| **ORM & Schema** | [Drizzle ORM](https://orm.drizzle.team) & Drizzle Kit |
-| **Runtime & Tooling** | [Bun](https://bun.sh) (fast package manager & TypeScript runtime) |
-| **Remote Sensing Data** | NASA FIRMS (VIIRS Active Fire), NASA GIBS WMTS (True Color corrected reflectance) |
+| Layer                   | Technologies                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Frontend UI**         | [Next.js](https://nextjs.org) 16 (App Router), [React](https://react.dev) 19, [Tailwind CSS](https://tailwindcss.com) v4, TypeScript |
+| **Mapping Engine**      | [MapLibre GL](https://maplibre.org) v5 (WebGL vector rendering)                                                                      |
+| **Spatial Database**    | [PostgreSQL](https://www.postgresql.org) 17 + [PostGIS](https://postgis.net) 3.5 via Docker                                          |
+| **ORM & Schema**        | [Drizzle ORM](https://orm.drizzle.team) & Drizzle Kit                                                                                |
+| **Runtime & Tooling**   | [Bun](https://bun.sh) (fast package manager & TypeScript runtime)                                                                    |
+| **Remote Sensing Data** | NASA FIRMS (VIIRS Active Fire), NASA GIBS WMTS (True Color corrected reflectance)                                                    |
 
 ---
 
@@ -140,6 +140,7 @@ bun run ingest:firms 2
 ```
 
 The script automatically:
+
 1. Queries 3 satellites: Suomi NPP, NOAA-20, NOAA-21.
 2. Deduplicates records using `ON CONFLICT DO NOTHING` on `(latitude, longitude, acquired_at, satellite)`.
 3. Performs a spatial join to associate each point with its `kabupaten_code` and `province_code`.
@@ -170,7 +171,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
   - Quick range selector: **24 hours**, **48 hours**, and **7 days**.
 - **Live Regional Ranking Dashboard**:
   - Real-time aggregation of top kabupaten by **hotspot count**, **total FRP sum**, or **density per 1,000 km²**.
-  - Calculates the percentage of detections occurring on **mapped peatlands** (*% on mapped peat*).
+  - Calculates the percentage of detections occurring on **mapped peatlands** (_% on mapped peat_).
   - Clicking any kabupaten automatically smooth-zooms (`fitBounds`) to its geographical boundaries.
 - **Contextual Environmental Layers**:
   - **Peatland Overlay**: Toggleable visual boundary of Kalimantan's peatland ecosystems.
@@ -182,25 +183,25 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Roadmap Status (Phases 0–6)
 
-| Phase | Description | Status | Current Output |
-|---|---|:---:|---|
-| **0. Research & Scope** | Questions defined, FIRMS datasets selected, kabupaten & peatland boundaries gathered. | **Completed** | Kalimantan bounding box, PostGIS spatial schemas, administrative boundary datasets. |
-| **1. Ingest & Storage** | Ingest scripts, duplicate handling, spatial indexing, historical storage. | **In Progress** | Working NRT pipeline with 21K+ records; multi-year historical archive backfill pending. |
-| **2. Map & Dashboard** | Next.js interface, MapLibre GL map, popups, legend, date range selector. | **Completed** | Full interactive map, FRP color ramp, localized WIB/WITA popups, GIBS imagery. |
-| **3. Temporal & Spatial Analysis** | Time slider, weekly rankings, spatial joins, cross-year comparison. | **In Progress** | Working time scrubber, ranking by count/FRP/density & peat share; year-over-year comparison pending. |
-| **4. Automation & Reliability** | Scheduled jobs, logging, rerun safety, error handling. | **In Progress** | Safe idempotent batch inserts with `ingest.log`; unattended cron runner pending. |
-| **5. Release & Handover** | Deployment, containerization, setup documentation, CI/CD. | **In Progress** | Dockerized PostGIS DB; Next.js frontend containerization & cloud hosting pending. |
-| **6. Extensions (Context)** | Peatland overlays, smoke/air quality, satellite reflectance. | **Partially Done** | Peatland layer and NASA GIBS daily true-color imagery already implemented! |
+| Phase                              | Description                                                                           |       Status       | Current Output                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------- | :----------------: | ---------------------------------------------------------------------------------------------------- |
+| **0. Research & Scope**            | Questions defined, FIRMS datasets selected, kabupaten & peatland boundaries gathered. |   **Completed**    | Kalimantan bounding box, PostGIS spatial schemas, administrative boundary datasets.                  |
+| **1. Ingest & Storage**            | Ingest scripts, duplicate handling, spatial indexing, historical storage.             |  **In Progress**   | Working NRT pipeline with 21K+ records; multi-year historical archive backfill pending.              |
+| **2. Map & Dashboard**             | Next.js interface, MapLibre GL map, popups, legend, date range selector.              |   **Completed**    | Full interactive map, FRP color ramp, localized WIB/WITA popups, GIBS imagery.                       |
+| **3. Temporal & Spatial Analysis** | Time slider, weekly rankings, spatial joins, cross-year comparison.                   |  **In Progress**   | Working time scrubber, ranking by count/FRP/density & peat share; year-over-year comparison pending. |
+| **4. Automation & Reliability**    | Scheduled jobs, logging, rerun safety, error handling.                                |  **In Progress**   | Safe idempotent batch inserts with `ingest.log`; unattended cron runner pending.                     |
+| **5. Release & Handover**          | Deployment, containerization, setup documentation, CI/CD.                             |  **In Progress**   | Dockerized PostGIS DB; Next.js frontend containerization & cloud hosting pending.                    |
+| **6. Extensions (Context)**        | Peatland overlays, smoke/air quality, satellite reflectance.                          | **Partially Done** | Peatland layer and NASA GIBS daily true-color imagery already implemented!                           |
 
 ### Minimum Viable Product (MVP) Checklist
 
 - [x] **Interactive Kalimantan hotspot map** (MapLibre GL, FRP glow, local time popups, GIBS layer)
 - [x] **Time slider and date filtering** (Play/pause scrubbing, 24h / 48h / 7d ranges)
 - [x] **Weekly hotspot rankings by kabupaten** (Sorted by Count, FRP sum, Density, Peat share, Zoom-to-fit)
-- [ ] **Historical FIRMS data stored in PostgreSQL** *(Database currently stores recent NRT data; multi-year archive backfill pending)*
-- [ ] **Year-to-year comparisons with coverage caveats** *(Pending historical data backfill)*
-- [ ] **Automated ingestion with duplicate handling** *(Deduplication is complete; unattended cron execution pending)*
-- [ ] **Deployed application and setup documentation** *(Local setup complete; cloud deployment pending)*
+- [ ] **Historical FIRMS data stored in PostgreSQL** _(Database currently stores recent NRT data; multi-year archive backfill pending)_
+- [ ] **Year-to-year comparisons with coverage caveats** _(Pending historical data backfill)_
+- [ ] **Automated ingestion with duplicate handling** _(Deduplication is complete; unattended cron execution pending)_
+- [ ] **Deployed application and setup documentation** _(Local setup complete; cloud deployment pending)_
 
 **Current MVP Score: 3.5 of 7 Completed**
 
@@ -226,18 +227,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## Study Club Learning Objectives
-
-This project is structured to teach core real-world engineering concepts across multiple disciplines:
-
-- **Data Engineering**: Fetching remote API streams, parsing large CSV/GeoJSON datasets, stream processing, batching, and handling idempotent updates.
-- **Database & Spatial Engineering (PostGIS)**: Designing spatial schemas, creating GiST indexes, running spatial joins (`ST_Contains`, `ST_DWithin`, `ST_Area`), and geodesic geography projections.
-- **Full-Stack Web Development**: Building responsive client applications with Next.js App Router, React hooks, Tailwind CSS, and WebGL map rendering.
-- **Cartography & Remote Sensing**: Understanding satellite sensor characteristics (VIIRS vs. MODIS, Fire Radiative Power, spatial resolutions, satellite overpass times, and time zone offsets).
-- **DevOps & Production Operations**: Working with containerized databases, environment secrets, automated ingest logging, and reproducible developer environments.
-
----
-
 ## Data Sources & Attributions
 
 - **Thermal Detections**: [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (Fire Information for Resource Management System) using the VIIRS 375m active fire products (Suomi NPP, NOAA-20, NOAA-21).
@@ -245,4 +234,4 @@ This project is structured to teach core real-world engineering concepts across 
 - **Administrative Boundaries**: [Badan Informasi Geospasial (BIG)](https://tanahair.indonesia.go.id/).
 - **Peatland Boundaries**: Kementerian Lingkungan Hidup dan Kehutanan (KLHK) Kesatuan Hidrologis Gambut (KHG).
 
-*Disclaimer: Satellite thermal detections represent detected thermal anomalies, not field-verified ground fires. Fire Radiative Power (FRP) is an index of instantaneous energy output. Mapped peatland indicators designate overlap with estimated peat boundaries and do not constitute independent proof of deep peat combustion.*
+_Disclaimer: Satellite thermal detections represent detected thermal anomalies, not field-verified ground fires. Fire Radiative Power (FRP) is an index of instantaneous energy output. Mapped peatland indicators designate overlap with estimated peat boundaries and do not constitute independent proof of deep peat combustion._
