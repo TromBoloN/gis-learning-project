@@ -97,6 +97,15 @@ async function main() {
     RETURNING h.id`;
   console.log(`Tagged ${inside.length} inside + ${coastal.length} coastal`);
 
+  const peat = await client`
+    UPDATE hotspots h
+    SET on_peat = EXISTS (
+      SELECT 1 FROM peatland p WHERE ST_Contains(p.geom, h.geom)
+    )
+    WHERE h.on_peat IS NULL
+    RETURNING h.id`;
+  console.log(`Tagged ${peat.length} hotspots against mapped peatland`);
+
   await client.end();
   if (failures === SOURCES.length) process.exit(1); // only fail if everything failed
 }
