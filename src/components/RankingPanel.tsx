@@ -8,6 +8,8 @@ type Props = {
   hours: number;
   satellite: boolean;
   onToggleSatellite: () => void;
+  peatland: boolean;
+  onTogglePeatland: () => void;
   onSelect: (bounds: Item["bounds"]) => void;
 };
 
@@ -23,6 +25,8 @@ export default function RankingPanel({
   hours,
   satellite,
   onToggleSatellite,
+  peatland,
+  onTogglePeatland,
   onSelect,
 }: Props) {
   const [open, setOpen] = useState(true);
@@ -63,6 +67,10 @@ export default function RankingPanel({
               value={totalDetections}
             />
             <Stat label="FRP sum" value={totalFrp} />
+            <Stat
+              label="On mapped peat"
+              value={items.reduce((s, i) => s + i.peatHotspots, 0)}
+            />
           </div>
 
           <div className="flex rounded-lg bg-black/30 p-1 text-xs">
@@ -80,6 +88,16 @@ export default function RankingPanel({
               </button>
             ))}
           </div>
+
+          <button
+            onClick={onTogglePeatland}
+            className="flex w-full items-center justify-between rounded-lg border border-lime-300/20 bg-lime-300/5 px-3 py-2 text-xs transition hover:bg-lime-300/10"
+          >
+            <span className="font-medium">Mapped peatland</span>
+            <span className={`flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition ${peatland ? "bg-lime-400" : "bg-slate-600"}`}>
+              <span className={`block h-3 w-3 rounded-full bg-white shadow transition-transform ${peatland ? "translate-x-3" : "translate-x-0"}`} />
+            </span>
+          </button>
 
           <button
             onClick={onToggleSatellite}
@@ -123,6 +141,9 @@ export default function RankingPanel({
                         : it[sortKey].toLocaleString()}
                     </span>
                   </span>
+                  <span className="relative mt-1 block pl-6 text-[10px] text-lime-300/70">
+                    {it.peatShare}% on mapped peat
+                  </span>
                 </button>
               </li>
             ))}
@@ -132,6 +153,7 @@ export default function RankingPanel({
             Satellite thermal detections from three VIIRS satellites, not
             confirmed fires. The same fire can be detected more than once, and
             FRP sum is an activity index, not total power.
+            Mapped peatland is an estimate; a detection on peat is not proof of a peat fire.
           </p>
         </div>
       )}

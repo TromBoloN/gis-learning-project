@@ -90,3 +90,21 @@ export function addHotspotLayers(map: MapInstance) {
     },
   });
 }
+
+export function addPeatlandLayer(map: MapInstance) {
+  map.addSource("peatland", { type: "geojson", data: "/api/peatland" });
+  map.addLayer({
+    id: "peatland-fill",
+    type: "fill",
+    source: "peatland",
+    paint: { "fill-color": "#a3e635", "fill-opacity": 0.14 },
+    layout: { visibility: "none" },
+  });
+  map.addLayer({
+    id: "peatland-line",
+    type: "line",
+    source: "peatland",
+    paint: { "line-color": "#bef264", "line-opacity": 0.55, "line-width": 1 },
+    layout: { visibility: "none" },
+  });
+}

@@ -13,7 +13,11 @@ export function useHotspots(mapRef: RefObject<MapInstance | null>, ready: boolea
     const from = new Date(Date.now() - hours * 36e5).toISOString();
 
     fetch(`/api/hotspots?from=${from}`, { signal: ctrl.signal })
-      .then((r) => r.json())
+      .then(async (r) => {
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.error ?? `hotspots request failed (${r.status})`);
+        return body;
+      })
       .then((g) => {
         const src = map.getSource("hotspots") as any;
         if (!src) return;

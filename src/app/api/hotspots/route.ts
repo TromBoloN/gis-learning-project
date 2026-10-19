@@ -20,14 +20,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "invalid from/to" }, { status: 400 });
   }
 
-  const rows = await db.execute(sql`
-    SELECT h.latitude, h.longitude, h.acquired_at, h.satellite, h.confidence,
-           h.frp, h.bright_ti4, k.nama_kab, k.nama_prov
-    FROM hotspots h
-    JOIN kabupaten k ON k.kode_kab = h.kabupaten_code
-    WHERE h.acquired_at >= ${from.toISOString()} AND h.acquired_at <= ${to.toISOString()}
-    ORDER BY h.acquired_at DESC
-        LIMIT 100000`);
+  let rows;
+  try {
+    rows = await db.execute(sql`
+      SELECT h.latitude, h.longitude, h.acquired_at, h.satellite, h.confidence,
+             h.frp, h.bright_ti4, h.on_peat, k.nama_kab, k.nama_prov
+      FROM hotspots h
+      JOIN kabupaten k ON k.kode_kab = h.kabupaten_code
+      WHERE h.acquired_at >= ${from.toISOString()} AND h.acquired_at <= ${to.toISOString()}
+      ORDER BY h.acquired_at DESC
+          LIMIT 100000`);
+  } catch (error) {
+    console.error("hotspots database query failed", error);
+    return NextResponse.json({ error: "database unavailable" }, { status: 503 });
+  }
 
   const features = (rows as unknown as Record<string, any>[]).map((r) => ({
     type: "Feature" as const,
@@ -38,6 +44,7 @@ export async function GET(req: NextRequest) {
       confidence: r.confidence,
       frp: r.frp,
       bright_ti4: r.bright_ti4,
+      on_peat: r.on_peat,
       kabupaten: r.nama_kab,
       province: r.nama_prov,
     },

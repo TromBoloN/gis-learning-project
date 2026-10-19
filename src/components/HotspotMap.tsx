@@ -18,6 +18,7 @@ export default function HotspotMap() {
 
   const [hours, setHours] = useState<RangeHours>(48);
   const [satellite, setSatellite] = useState(false);
+  const [peatland, setPeatland] = useState(false);
 
   const items = useRanking(hours);
   const { span, latest } = useHotspots(mapRef, ready, hours);
@@ -25,6 +26,14 @@ export default function HotspotMap() {
 
   useCursorFilter(mapRef, ready, cursor);
   useImagery(mapRef, ready, satellite);
+
+  const togglePeatland = () => {
+    const next = !peatland;
+    setPeatland(next);
+    for (const id of ["peatland-fill", "peatland-line"]) {
+      mapRef.current?.setLayoutProperty(id, "visibility", next ? "visible" : "none");
+    }
+  };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-slate-950">
@@ -37,6 +46,8 @@ export default function HotspotMap() {
         hours={hours}
         satellite={satellite}
         onToggleSatellite={() => setSatellite((s) => !s)}
+        peatland={peatland}
+        onTogglePeatland={togglePeatland}
         onSelect={(b) =>
           mapRef.current?.fitBounds(b, { padding: 60, duration: 900 })
         }

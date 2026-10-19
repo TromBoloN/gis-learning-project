@@ -16,6 +16,21 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Peatland overlay
+
+The mapped peatland layer uses `data/raw/peatland-kabupaten.geojson`, filtered
+to Kalimantan using the dataset's province codes. Load it into PostGIS after
+applying the migrations:
+
+```bash
+bun run ingest/load-peatland.ts
+```
+
+The FIRMS ingest then tags detections with `on_peat`. The map labels this as
+mapped peatland: a thermal detection inside the mapped area is not proof of a
+peat fire, and the dataset should be credited according to its original
+source and license.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

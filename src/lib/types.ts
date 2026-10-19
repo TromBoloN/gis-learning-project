@@ -5,6 +5,8 @@ export type Item = {
   areaKm2: number;
   hotspots: number;
   totalFrp: number;
+  peatHotspots: number;
+  peatShare: number;
   per1000km2: number;
   bounds: [[number, number], [number, number]];
 };
@@ -18,6 +20,7 @@ export type HotspotProps = {
   confidence: string;
   frp: number;
   bright_ti4: number;
+  on_peat: boolean | null;
   kabupaten: string;
   province: string;
 };

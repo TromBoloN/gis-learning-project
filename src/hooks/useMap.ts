@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import maplibregl, { type MapInstance } from "@/lib/maplibre";
-import { addBaseLayers, addHotspotLayers } from "@/lib/mapLayers";
+import { addBaseLayers, addHotspotLayers, addPeatlandLayer } from "@/lib/mapLayers";
 import { attachHotspotInteractions } from "@/lib/popup";
 
 export function useMap(container: RefObject<HTMLDivElement | null>) {
@@ -23,6 +23,7 @@ export function useMap(container: RefObject<HTMLDivElement | null>) {
 
     map.on("load", () => {
       addBaseLayers(map);
+      addPeatlandLayer(map);
       addHotspotLayers(map);
       attachHotspotInteractions(map);
       setReady(true);

@@ -16,20 +16,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "invalid from/to" }, { status: 400 });
   }
 
-  const rows = await db.execute(sql`
-    SELECT k.kode_kab, k.nama_kab, k.nama_prov,
-           ROUND((ST_Area(k.geom::geography) / 1e6)::numeric) AS area_km2,
-           ST_XMin(k.geom) AS xmin, ST_YMin(k.geom) AS ymin,
-           ST_XMax(k.geom) AS xmax, ST_YMax(k.geom) AS ymax,
-           COUNT(h.id)::int AS hotspots,
-           COALESCE(ROUND(SUM(h.frp)::numeric), 0)::int AS total_frp
-    FROM kabupaten k
-    LEFT JOIN hotspots h
-      ON h.kabupaten_code = k.kode_kab
-     AND h.acquired_at >= ${from.toISOString()}
-     AND h.acquired_at <= ${to.toISOString()}
-    GROUP BY k.kode_kab, k.nama_kab, k.nama_prov, k.geom
-    ORDER BY hotspots DESC`);
+  let rows;
+  try {
+    rows = await db.execute(sql`
+      SELECT k.kode_kab, k.nama_kab, k.nama_prov,
+             ROUND((ST_Area(k.geom::geography) / 1e6)::numeric) AS area_km2,
+             ST_XMin(k.geom) AS xmin, ST_YMin(k.geom) AS ymin,
+             ST_XMax(k.geom) AS xmax, ST_YMax(k.geom) AS ymax,
+             COUNT(h.id)::int AS hotspots,
+             COALESCE(ROUND(SUM(h.frp)::numeric), 0)::int AS total_frp,
+             COUNT(h.id) FILTER (WHERE h.on_peat)::int AS peat_hotspots
+      FROM kabupaten k
+      LEFT JOIN hotspots h
+        ON h.kabupaten_code = k.kode_kab
+       AND h.acquired_at >= ${from.toISOString()}
+       AND h.acquired_at <= ${to.toISOString()}
+      GROUP BY k.kode_kab, k.nama_kab, k.nama_prov, k.geom
+      ORDER BY hotspots DESC`);
+  } catch (error) {
+    console.error("ranking database query failed", error);
+    return NextResponse.json({ error: "database unavailable" }, { status: 503 });
+  }
 
   const data = (rows as unknown as Record<string, any>[]).map((r) => ({
     code: r.kode_kab,
@@ -38,6 +45,8 @@ export async function GET(req: NextRequest) {
     areaKm2: Number(r.area_km2),
     hotspots: r.hotspots,
     totalFrp: r.total_frp,
+    peatHotspots: r.peat_hotspots,
+    peatShare: r.hotspots > 0 ? +(r.peat_hotspots / r.hotspots * 100).toFixed(1) : 0,
     per1000km2: Number(r.area_km2) > 0 ? +(r.hotspots / (Number(r.area_km2) / 1000)).toFixed(1) : 0,
     bounds: [[r.xmin, r.ymin], [r.xmax, r.ymax]],
   }));
