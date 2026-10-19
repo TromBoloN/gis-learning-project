@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "drizzle-kit migrate",
+    "ingest:admin": "bun run ingest/load-admin.ts",
+    "ingest:peatland": "bun run ingest/load-peatland.ts",
+    "ingest:firms": "bun run ingest/fetch-firms.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
